@@ -28,12 +28,11 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const adminLoginUrl = import.meta.env.VITE_ADMIN_URL || '/admin/login';
   const handleLogoClick = useSecretClicks({
     clicks: 5,
     windowMs: 3000,
     onTrigger: () => {
-      window.location.assign(adminLoginUrl);
+      window.location.assign('/admin/login');
     },
   });
 

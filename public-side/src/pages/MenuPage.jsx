@@ -5,7 +5,6 @@ import { CategoryBar } from '../components/menu/CategoryBar';
 import { FilterBar } from '../components/menu/FilterBar';
 import { MenuItemCard } from '../components/menu/MenuItemCard';
 import { ItemDetailModal } from '../components/menu/ItemDetailModal';
-import { MenuItemSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useMenu } from '../hooks/useMenu';
 
@@ -17,6 +16,8 @@ export default function MenuPage() {
   const {
     categories,
     categoriesLoading,
+    categoriesError,
+    refetchCategories,
     activeCategory,
     setActiveCategory,
     isVegOnly,
@@ -27,6 +28,7 @@ export default function MenuPage() {
     itemsLoading,
     itemsError,
     resetFilters,
+    refetch,
   } = useMenu(categoryFromUrl);
 
   // Sync category state with URL parameter if it changes
@@ -51,6 +53,9 @@ export default function MenuPage() {
     searchParams.delete('category');
     setSearchParams(searchParams);
   };
+
+  const hasActiveFilters =
+    activeCategory !== 'all' || isVegOnly || searchQuery.trim().length > 0;
 
   return (
     <>
@@ -80,6 +85,21 @@ export default function MenuPage() {
         activeCategory={activeCategory}
         onSelectCategory={handleSelectCategory}
       />
+      {categoriesError && !categoriesLoading && (
+        <div
+          role="alert"
+          className="bg-white px-4 py-3 text-center text-sm text-espresso-700 border-b border-espresso-100"
+        >
+          Menu categories could not be loaded. {categoriesError}{' '}
+          <button
+            type="button"
+            onClick={refetchCategories}
+            className="font-semibold text-terracotta-700 underline underline-offset-2"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <section className="py-8 sm:py-12 bg-cream-50 min-h-[60vh]">
@@ -117,10 +137,10 @@ export default function MenuPage() {
               <p className="text-espresso-700 mb-4">{itemsError}</p>
               <button
                 type="button"
-                onClick={handleReset}
+                onClick={refetch}
                 className="px-4 py-2 bg-espresso-800 text-cream-50 rounded-xl text-sm font-medium"
               >
-                Reload Menu
+                Retry
               </button>
             </div>
           )}
@@ -128,9 +148,13 @@ export default function MenuPage() {
           {/* Empty State */}
           {!itemsLoading && !itemsError && menuItems.length === 0 && (
             <EmptyState
-              title="No delicious treats found"
-              message={`We couldn't find any items matching "${searchQuery || 'your active filters'}". Try adjusting your search term or turning off the veg-only filter.`}
-              onReset={handleReset}
+              title={hasActiveFilters ? 'No delicious treats found' : 'Our menu is being updated'}
+              message={
+                hasActiveFilters
+                  ? `We couldn't find any items matching "${searchQuery || 'your active filters'}". Try adjusting your search term or turning off the veg-only filter.`
+                  : 'Our current menu is not available yet. Please check back soon.'
+              }
+              onReset={hasActiveFilters ? handleReset : undefined}
             />
           )}
 

@@ -4,6 +4,7 @@ import { getCategories, getMenuItems, getPopularMenuItems } from '../services/me
 export function useMenu(initialCategory = 'all') {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState(null);
 
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [isVegOnly, setIsVegOnly] = useState(false);
@@ -13,9 +14,11 @@ export function useMenu(initialCategory = 'all') {
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState(null);
 
-  // Load categories once
-  useEffect(() => {
+  const fetchCategories = useCallback(() => {
     let isMounted = true;
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+
     getCategories()
       .then((cats) => {
         if (isMounted) {
@@ -23,14 +26,19 @@ export function useMenu(initialCategory = 'all') {
           setCategoriesLoading(false);
         }
       })
-      .catch(() => {
-        if (isMounted) setCategoriesLoading(false);
+      .catch((err) => {
+        if (isMounted) {
+          setCategoriesError(err?.message || 'Could not load menu categories');
+          setCategoriesLoading(false);
+        }
       });
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => fetchCategories(), [fetchCategories]);
 
   // Fetch items whenever filters change
   const fetchItems = useCallback(() => {
@@ -77,6 +85,8 @@ export function useMenu(initialCategory = 'all') {
   return {
     categories,
     categoriesLoading,
+    categoriesError,
+    refetchCategories: fetchCategories,
     activeCategory,
     setActiveCategory,
     isVegOnly,
